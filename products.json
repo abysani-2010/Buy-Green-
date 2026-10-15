@@ -1,1 +1,272 @@
-
+{
+  "multigrain_slided_breads": [
+    {
+      "barcode": "0096619020256",
+      "product_name": "Organic Loaf",
+      "brands": "Kirkland Signature",
+      "ecoscore_grade": "a",
+      "ecoscore_score": 84,
+      "image_url": "https://images.openfoodfacts.org/images/products/009/661/902/0256/front_en.5.400.jpg"
+    },
+    {
+      "barcode": "0014100085980",
+      "product_name": "Whole Grain 15 Grain Bread",
+      "brands": "Pepperidge Farm",
+      "ecoscore_grade": "a",
+      "ecoscore_score": 79,
+      "image_url": "https://images.openfoodfacts.org/images/products/001/410/008/5980/front_en.75.400.jpg"
+    },
+    {
+      "barcode": "0073130005498",
+      "product_name": "Whole grains health nut bread",
+      "brands": "Oroweat",
+      "ecoscore_grade": "a",
+      "ecoscore_score": 77,
+      "image_url": "https://images.openfoodfacts.org/images/products/007/313/000/5498/front_en.4.400.jpg"
+    },
+    {
+      "barcode": "0019016009488",
+      "product_name": "Sliced Bread Seeds & Grains with Guacamole Spices",
+      "brands": "The Avocado Bread Company",
+      "ecoscore_grade": "a",
+      "ecoscore_score": 76,
+      "image_url": "https://images.openfoodfacts.org/images/products/001/901/600/9488/front_en.36.400.jpg"
+    },
+    {
+      "barcode": "0073472001202",
+      "product_name": "EZEKIEL 4:9 FLOURLESS SPROUTED GRAIN BREAD",
+      "brands": "Food For Life Baking Co Inc",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/007/347/200/1202/front_en.142.400.jpg"
+    },
+    {
+      "barcode": "0013764027138",
+      "product_name": "THIN-SLICED",
+      "brands": "Dave’s Killer Bread",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/001/376/402/7138/front_en.427.400.jpg"
+    },
+    {
+      "barcode": "0013764028036",
+      "product_name": "Organic Bagels Epic Everything",
+      "brands": "Dave's Killer Bread",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/001/376/402/8036/front_en.217.400.jpg"
+    },
+    {
+      "barcode": "00209588",
+      "product_name": "Sprouted Wheat Multigrain Bread",
+      "brands": "Trader Joe's",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/000/000/020/9588/front_en.3.400.jpg"
+    },
+    {
+      "barcode": "0762612551232",
+      "product_name": "Organic Multigrain Bread With Ancient Grains",
+      "brands": "Grace Baking",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/076/261/255/1232/front_en.19.400.jpg"
+    },
+    {
+      "barcode": "0070733778965",
+      "product_name": "Dakota Style 12-Grain Bread",
+      "brands": "Country Hearth",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 72,
+      "image_url": "https://images.openfoodfacts.org/images/products/007/073/377/8965/front_en.3.400.jpg"
+    },
+    {
+      "barcode": "9555829100017",
+      "product_name": "THE ORIGINAL SPROUTED 7-GRAINS BREAD",
+      "brands": "RAINBOWS",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 62,
+      "image_url": "https://images.openfoodfacts.org/images/products/955/582/910/0017/front_en.11.400.jpg"
+    },
+    {
+      "barcode": "0011110135483",
+      "product_name": "Organic thin sliced 21 grains + seeds bread",
+      "brands": "Simply truth",
+      "ecoscore_grade": "d",
+      "ecoscore_score": 37,
+      "image_url": "https://images.openfoodfacts.org/images/products/001/111/013/5483/front_en.38.400.jpg"
+    }
+  ],
+  "peanut_butter": [
+    {
+      "barcode": "4099100033045",
+      "product_name": "Creamy Peanut Butter",
+      "brands": "Jif",
+      "ecoscore_grade": "e",
+      "ecoscore_score": 29,
+      "image_url": "https://images.openfoodfacts.org/images/products/409/910/003/3045/front_en.12.400.jpg"
+    },
+    {
+      "barcode": "0037600105330",
+      "product_name": "Natural Super Chunk Peanut Butter Spread",
+      "brands": "Skippy",
+      "ecoscore_grade": "e",
+      "ecoscore_score": 19,
+      "image_url": "https://images.openfoodfacts.org/images/products/003/760/010/5330/front_en.4.400.jpg"
+    },
+    {
+      "barcode": "0036192127010",
+      "product_name": "Organics crunchy dark roasted peanut butter",
+      "brands": "Santa Cruz",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 46,
+      "image_url": "https://images.openfoodfacts.org/images/products/003/619/212/7010/front_en.16.400.jpg"
+    },
+    {
+      "barcode": "0044082032214",
+      "product_name": "Crunchy Peanut Butter",
+      "brands": "Once Again",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 46,
+      "image_url": "https://images.openfoodfacts.org/images/products/004/408/203/2214/front_en.40.400.jpg"
+    },
+    {
+      "barcode": "0096619555505",
+      "product_name": "Organic Creamy Peanut Butter",
+      "brands": "Kirkland",
+      "ecoscore_grade": "d",
+      "ecoscore_score": 42,
+      "image_url": "https://images.openfoodfacts.org/images/products/009/661/955/5505/front_en.450.400.jpg"
+    },
+    {
+      "barcode": "0051500053300",
+      "product_name": "Peanut butter",
+      "brands": "Smuckers",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 45,
+      "image_url": "https://images.openfoodfacts.org/images/products/005/150/005/3300/front_en.28.400.jpg"
+    },
+    {
+      "barcode": "0074822610631",
+      "product_name": "100% Peanuts! Creamy",
+      "brands": "Carmy Richards",
+      "ecoscore_grade": "d",
+      "ecoscore_score": 42,
+      "image_url": "https://images.openfoodfacts.org/images/products/007/482/261/0631/front_en.64.400.jpg"
+    },
+    {
+      "barcode": "0037600106740",
+      "product_name": "Natural Creamy Peanut Butter Spread",
+      "brands": "Skippy",
+      "ecoscore_grade": "e",
+      "ecoscore_score": 27,
+      "image_url": "https://images.openfoodfacts.org/images/products/003/760/010/6740/front_en.131.400.jpg"
+    },
+    {
+      "barcode": "0051500243220",
+      "product_name": "Natural Jif Creamy Peanut Butter Spread",
+      "brands": "Jif",
+      "ecoscore_grade": "e",
+      "ecoscore_score": 19,
+      "image_url": "https://images.openfoodfacts.org/images/products/005/150/024/3220/front_en.66.400.jpg"
+    },
+    {
+      "barcode": "0194346116607",
+      "product_name": "Creamy Peanut Butter",
+      "brands": "Great Value",
+      "ecoscore_grade": "e",
+      "ecoscore_score": 29,
+      "image_url": "https://images.openfoodfacts.org/images/products/019/434/611/6607/front_en.51.400.jpg"
+    }
+  ],
+  "fruit_jam": [
+    {
+      "barcode": "0041800502189",
+      "product_name": "Welch’s",
+      "brands": "Welch’s concord jelly",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 67,
+      "image_url": "https://images.openfoodfacts.org/images/products/004/180/050/2189/front_en.7.400.jpg"
+    },
+    {
+      "barcode": "0051500040027",
+      "product_name": "Apricot Preserves",
+      "brands": "Smucker's",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 62,
+      "image_url": "https://images.openfoodfacts.org/images/products/005/150/004/0027/front_en.26.400.jpg"
+    },
+    {
+      "barcode": "0051500012284",
+      "product_name": "Red Raspberry Jam",
+      "brands": "Smucker's",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 70,
+      "image_url": "https://images.openfoodfacts.org/images/products/005/150/001/2284/front_en.31.400.jpg"
+    },
+    {
+      "barcode": "0051500012291",
+      "product_name": "Seedless Strawberry Jam",
+      "brands": "Smucker's",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 70,
+      "image_url": "https://images.openfoodfacts.org/images/products/005/150/001/2291/front_en.72.400.jpg"
+    },
+    {
+      "barcode": "0711381024744",
+      "product_name": "Apricot jam",
+      "brands": "Stonewall Kitchen",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 70,
+      "image_url": "https://images.openfoodfacts.org/images/products/071/138/102/4744/front_en.5.400.jpg"
+    },
+    {
+      "barcode": "0711381000663",
+      "product_name": "Strawberry Jam",
+      "brands": "STONEWALL KITCHEN",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 57,
+      "image_url": "https://images.openfoodfacts.org/images/products/071/138/100/0663/front_en.18.400.jpg"
+    },
+    {
+      "barcode": "0067275007646",
+      "product_name": "Apricot Food Spread",
+      "brands": "Crofter’s Organic",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 62,
+      "image_url": "https://images.openfoodfacts.org/images/products/006/727/500/7646/front_en.3.400.jpg"
+    },
+    {
+      "barcode": "0099482500634",
+      "product_name": "Concord Grape Fruit Spread",
+      "brands": "Whole Foods Market",
+      "ecoscore_grade": "b",
+      "ecoscore_score": 60,
+      "image_url": "https://images.openfoodfacts.org/images/products/009/948/250/0634/front_en.3.400.jpg"
+    },
+    {
+      "barcode": "0096619217939",
+      "product_name": "Jelly",
+      "brands": "Kirkland",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 57,
+      "image_url": "https://images.openfoodfacts.org/images/products/009/661/921/7939/front_en.49.400.jpg"
+    },
+    {
+      "barcode": "00688628",
+      "product_name": "Apple Cider Fruit Spread",
+      "brands": "Trader Joe's",
+      "ecoscore_grade": "a",
+      "ecoscore_score": 79,
+      "image_url": "https://images.openfoodfacts.org/images/products/000/000/068/8628/front_en.3.400.jpg"
+    },
+    {
+      "barcode": "00964784",
+      "product_name": "FIG BUTTER",
+      "brands": "Trader Joe's",
+      "ecoscore_grade": "c",
+      "ecoscore_score": 57,
+      "image_url": "https://images.openfoodfacts.org/images/products/000/000/096/4784/front_en.5.400.jpg"
+    }
+  ]
+}
