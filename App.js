@@ -19,6 +19,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import { useFonts, Gaegu_400Regular, Gaegu_700Bold } from '@expo-google-fonts/gaegu';
 import productsData from './products.json';
+import initialForumPosts from './forumData.json';
 
 const { width, height } = Dimensions.get('window');
 const FORUM_STORAGE_KEY = '@forum_posts_key_v1';
@@ -47,11 +48,8 @@ export default function App() {
   const [sortBy, setSortBy] = useState('green_value'); // 'green_value', 'ecoscore', 'affordability', 'alphabetical'
   const [ecoWeight, setEcoWeight] = useState(0.5);
 
-  // Forum state with persistent storage
-  const [posts, setPosts] = useState([
-    { id: '1', name: 'EcoCafe Downtown', text: 'Reusing coffee grounds for community gardens and offering 10% off if you bring your own mug!' },
-    { id: '2', name: 'GreenLeaf Market', text: 'Zero-waste grocery store with bulk organic grains and local produce refill stations.' }
-  ]);
+  // Forum state initialized as empty array
+  const [posts, setPosts] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newBizName, setNewBizName] = useState('');
   const [newBizText, setNewBizText] = useState('');
@@ -60,7 +58,7 @@ export default function App() {
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
-  // Load saved forum posts on startup
+  // Load saved forum posts on startup or fallback to initial JSON
   useEffect(() => {
     loadSavedPosts();
   }, []);
@@ -68,8 +66,12 @@ export default function App() {
   const loadSavedPosts = async () => {
     try {
       const storedPosts = await AsyncStorage.getItem(FORUM_STORAGE_KEY);
-      if (storedPosts) {
+      if (storedPosts !== null) {
         setPosts(JSON.parse(storedPosts));
+      } else {
+        // First run: set initial posts from forumData.json and seed AsyncStorage
+        setPosts(initialForumPosts);
+        await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(initialForumPosts));
       }
     } catch (e) {
       console.log('Error loading saved forum posts:', e);
@@ -700,10 +702,10 @@ const styles = StyleSheet.create({
     justify: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-    gap: 10, // Creates exactly 10px gap between grid cards
+    gap: 10,
   },
   catCardBread: {
-    width: (width - 32 - 10) / 2, // Calculates box width for exact 10px spacing
+    width: (width - 32 - 10) / 2,
     height: 165,
     backgroundColor: '#DEAA50',
     borderRadius: 18,
@@ -746,10 +748,10 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#983A20',
     alignItems: 'center',
-    justify: 'center', // Centers the text label inside the card
+    justify: 'center',
   },
   catImage: {
-    width: 95,  // Made images larger
+    width: 95,
     height: 95,
     marginBottom: 4,
   },
