@@ -48,7 +48,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState('green_value'); // 'green_value', 'ecoscore', 'affordability', 'alphabetical'
   const [ecoWeight, setEcoWeight] = useState(0.5);
 
-  // Forum state initialized as empty array
+  // Forum state
   const [posts, setPosts] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [newBizName, setNewBizName] = useState('');
@@ -66,15 +66,18 @@ export default function App() {
   const loadSavedPosts = async () => {
     try {
       const storedPosts = await AsyncStorage.getItem(FORUM_STORAGE_KEY);
-      if (storedPosts !== null) {
-        setPosts(JSON.parse(storedPosts));
+      const parsed = storedPosts ? JSON.parse(storedPosts) : null;
+      
+      if (parsed && parsed.length > 0) {
+        setPosts(parsed);
       } else {
-        // First run: set initial posts from forumData.json and seed AsyncStorage
-        setPosts(initialForumPosts);
-        await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(initialForumPosts));
+        // Fallback to initial forumData.json if empty or not found
+        setPosts(initialForumPosts || []);
+        await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(initialForumPosts || []));
       }
     } catch (e) {
       console.log('Error loading saved forum posts:', e);
+      setPosts(initialForumPosts || []);
     }
   };
 
@@ -166,7 +169,7 @@ export default function App() {
         // 1. Direct match
         if (itemBarcode === scannedClean) return true;
 
-        // 2. Contains match (handles extra leading 0s or EAN13 vs UPCA length differences)
+        // 2. Contains match
         if (scannedClean.includes(itemBarcode) || itemBarcode.includes(scannedClean)) return true;
 
         // 3. Match ignoring all leading zeros
@@ -713,8 +716,8 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'flex-start',
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   catCardJam: {
     width: (width - 32 - 10) / 2,
@@ -725,8 +728,8 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'flex-start',
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   catCardPb: {
     width: (width - 32 - 10) / 2,
@@ -737,8 +740,8 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'flex-start',
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 8,
+    paddingBottom: 8,
   },
   catCardMore: {
     width: (width - 32 - 10) / 2,
@@ -751,9 +754,9 @@ const styles = StyleSheet.create({
     justify: 'center',
   },
   catImage: {
-    width: 95,
-    height: 95,
-    marginBottom: 4,
+    width: 115,
+    height: 115,
+    marginBottom: 2,
   },
   catLabel: {
     backgroundColor: '#F1EBE2',
