@@ -11,6 +11,8 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
+  StatusBar,
+  Platform,
 } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
@@ -18,13 +20,13 @@ import productsData from './products.json';
 
 const { width, height } = Dimensions.get('window');
 
-// Eco Score grades mapped strictly to your exact 4-color palette
+// Extended grade color palette staying strictly within your warm earthy aesthetic
 const ECO_COLORS = {
-  a: '#94B379',
-  b: '#94B379',
-  c: '#DEAA50',
-  d: '#DEAA50',
-  e: '#983A20',
+  a: '#6B8E4E', // Rich Forest Sage Green
+  b: '#94B379', // Main Earthy Green
+  c: '#DEAA50', // Main Mustard Yellow
+  d: '#B87233', // Warm Terracotta / Dark Amber
+  e: '#983A20', // Main Deep Brown
 };
 
 export default function App() {
@@ -46,7 +48,7 @@ export default function App() {
   const [newBizName, setNewBizName] = useState('');
   const [newBizText, setNewBizText] = useState('');
 
-  // Camera permissions
+  // Camera permissions and scanning throttle
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
 
@@ -108,9 +110,6 @@ export default function App() {
       if (sortBy === 'affordability') {
         return item._aff > (activeProduct._aff ?? activeProduct.affordability_score ?? 0);
       }
-      if (sortBy === 'alphabetical') {
-        return (item.product_name || '').toLowerCase() < (activeProduct.product_name || '').toLowerCase();
-      }
       return item._gv > (activeProduct._gv ?? calculateScores(activeProduct, ecoWeight).greenValue);
     });
 
@@ -171,7 +170,7 @@ export default function App() {
               style={styles.monkeyImage} 
               resizeMode="contain" 
             />
-            <View style={styles.sproutBadge}><Text style={{ fontSize: 16 }}>🌱</Text></View>
+            <View style={styles.sproutBadge}><Text style={{ fontSize: 20 }}>🌱</Text></View>
           </View>
           
           <Text style={styles.welcomeTitle}>~ buy green ~</Text>
@@ -195,8 +194,8 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <View style={styles.headerBar}>
           <View style={styles.searchBarMock}>
-            <Ionicons name="search" size={18} color="#983A20" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#983A20', fontWeight: '500' }}>Choose the product category</Text>
+            <Ionicons name="search" size={20} color="#983A20" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#983A20', fontWeight: '500', fontSize: 15 }}>Choose the product category</Text>
           </View>
         </View>
 
@@ -223,10 +222,10 @@ export default function App() {
 
         <View style={styles.bottomNav}>
           <TouchableOpacity onPress={() => setCurrentScreen('forum')} style={styles.navTouchArea}>
-            <Ionicons name="chatbubbles-outline" size={28} color="#983A20" />
+            <Ionicons name="chatbubbles-outline" size={32} color="#983A20" />
           </TouchableOpacity>
           <TouchableOpacity onPress={() => { setScanned(false); setCurrentScreen('scanner'); }} style={styles.navTouchArea}>
-            <Ionicons name="camera-outline" size={28} color="#983A20" />
+            <Ionicons name="camera-outline" size={32} color="#983A20" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -241,19 +240,22 @@ export default function App() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topNavBack}>
-          <TouchableOpacity onPress={() => {
-            if (activeProduct) {
-              setActiveProduct(null); // Go back to full category view
-            } else {
-              setCurrentScreen('home'); // Go back home
-            }
-          }}>
-            <Ionicons name="arrow-back" size={26} color="#983A20" />
+          <TouchableOpacity 
+            style={styles.backButtonTouch} 
+            onPress={() => {
+              if (activeProduct) {
+                setActiveProduct(null); // Go back to full category view
+              } else {
+                setCurrentScreen('home'); // Go back home
+              }
+            }}
+          >
+            <Ionicons name="arrow-back" size={28} color="#983A20" />
           </TouchableOpacity>
           <Text style={styles.headerTitleText}>
             {activeProduct ? 'Product Details' : 'All Category Products'}
           </Text>
-          <View style={{ width: 26 }} />
+          <View style={{ width: 28 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.detailContainer}>
@@ -387,12 +389,15 @@ export default function App() {
               <Text style={[styles.sortButtonText, sortBy === 'affordability' && styles.sortButtonTextActive]}>Affordability</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={[styles.sortButton, sortBy === 'alphabetical' && styles.sortButtonActive]}
-              onPress={() => setSortBy('alphabetical')}
-            >
-              <Text style={[styles.sortButtonText, sortBy === 'alphabetical' && styles.sortButtonTextActive]}>A-Z</Text>
-            </TouchableOpacity>
+            {/* HIDE ALPHABETICAL SORT BUTTON WHEN INSIDE A SINGLE PRODUCT VIEW */}
+            {!activeProduct && (
+              <TouchableOpacity 
+                style={[styles.sortButton, sortBy === 'alphabetical' && styles.sortButtonActive]}
+                onPress={() => setSortBy('alphabetical')}
+              >
+                <Text style={[styles.sortButtonText, sortBy === 'alphabetical' && styles.sortButtonTextActive]}>A-Z</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* ALL PRODUCTS GRID VIEW (SHOWN INITIALLY WHEN NO PRODUCT IS CLICKED) */}
@@ -437,8 +442,8 @@ export default function App() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topNavBackForum}>
-          <TouchableOpacity onPress={() => setCurrentScreen('home')}>
-            <Ionicons name="arrow-back" size={26} color="#983A20" />
+          <TouchableOpacity style={styles.backButtonTouch} onPress={() => setCurrentScreen('home')}>
+            <Ionicons name="arrow-back" size={28} color="#983A20" />
           </TouchableOpacity>
           <Text style={styles.headerTitleText}>Local Sustainable Businesses</Text>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
@@ -501,7 +506,7 @@ export default function App() {
     }
 
     return (
-      <SafeAreaView style={styles.scannerContainer}>
+      <View style={styles.scannerContainer}>
         <CameraView
           style={StyleSheet.absoluteFillObject}
           facing="back"
@@ -510,15 +515,15 @@ export default function App() {
           }}
           onBarcodeScanned={handleBarCodeScanned}
         />
-        <View style={styles.scannerOverlay}>
+        <SafeAreaView style={styles.scannerOverlay}>
           <TouchableOpacity style={styles.scannerBackBtn} onPress={() => setCurrentScreen('home')}>
-            <Ionicons name="close" size={30} color="#F1EBE2" />
+            <Ionicons name="close" size={32} color="#F1EBE2" />
           </TouchableOpacity>
           <View style={styles.scanTargetBox}>
             <Text style={styles.scanInstruction}>Align product barcode within frame</Text>
           </View>
-        </View>
-      </SafeAreaView>
+        </SafeAreaView>
+      </View>
     );
   }
 
@@ -530,6 +535,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F1EBE2',
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
   },
   scannerContainer: {
     flex: 1,
@@ -537,42 +543,45 @@ const styles = StyleSheet.create({
   },
   centerText: {
     textAlign: 'center',
-    marginTop: 40,
+    marginTop: 60,
     color: '#983A20',
+    fontSize: 16,
   },
   welcomeContainer: {
     flex: 1,
     alignItems: 'center',
     justify: 'center',
     paddingHorizontal: 20,
+    paddingTop: 40,
     paddingBottom: 40,
   },
   monkeyHeaderBox: {
-    width: 220,
-    height: 220,
+    width: 240,
+    height: 240,
     backgroundColor: '#F1EBE2',
-    borderRadius: 110,
+    borderRadius: 120,
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
+    marginTop: 30,
     position: 'relative',
     borderWidth: 3,
     borderColor: '#983A20',
   },
   monkeyImage: {
-    width: 180,
-    height: 180,
+    width: 200,
+    height: 200,
   },
   sproutBadge: {
     position: 'absolute',
-    top: 20,
-    right: 25,
+    top: 22,
+    right: 28,
   },
   welcomeTitle: {
-    fontSize: 26,
+    fontSize: 28,
     color: '#983A20',
     fontWeight: 'bold',
-    marginBottom: 50,
+    marginBottom: 40,
   },
   welcomeButtonContainer: {
     width: '100%',
@@ -599,7 +608,7 @@ const styles = StyleSheet.create({
     fontSize: 18,
   },
   headerBar: {
-    paddingTop: 12,
+    paddingTop: 24,
     paddingBottom: 16,
     alignItems: 'center',
   },
@@ -617,52 +626,53 @@ const styles = StyleSheet.create({
   categoryGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justify: 'space-around',
-    padding: 16,
+    justify: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
   catCardBread: {
-    width: '44%',
-    height: 150,
+    width: '47%',
+    height: 155,
     backgroundColor: '#DEAA50',
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   catCardJam: {
-    width: '44%',
-    height: 150,
+    width: '47%',
+    height: 155,
     backgroundColor: '#94B379',
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   catCardPb: {
-    width: '44%',
-    height: 150,
+    width: '47%',
+    height: 155,
     backgroundColor: '#94B379',
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   catCardMore: {
-    width: '44%',
-    height: 150,
+    width: '47%',
+    height: 155,
     backgroundColor: '#DEAA50',
-    borderRadius: 16,
+    borderRadius: 18,
     borderWidth: 2,
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 20,
+    marginBottom: 18,
   },
   catImage: {
     width: 80,
@@ -690,10 +700,11 @@ const styles = StyleSheet.create({
   },
   bottomNav: {
     flexDirection: 'row',
-    justify: 'space-around',
+    justify: 'center',
     alignItems: 'center',
+    gap: 60,
     paddingTop: 12,
-    paddingBottom: 34, // Tailored for Galaxy S23 home bar spacing
+    paddingBottom: 48, // Lifted up to clear system navigation bar
     borderTopWidth: 2,
     borderColor: '#983A20',
     backgroundColor: '#F1EBE2',
@@ -706,15 +717,19 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingTop: 36, // Lowered back button position clear of status icons
+    paddingBottom: 12,
   },
   topNavBackForum: {
     flexDirection: 'row',
     alignItems: 'center',
     justify: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 8,
+    paddingTop: 36,
+    paddingBottom: 12,
+  },
+  backButtonTouch: {
+    padding: 8,
   },
   headerTitleText: {
     color: '#983A20',
@@ -1071,7 +1086,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justify: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 40,
+    paddingTop: 50, // Clears top status bar / camera notch
     paddingBottom: 60,
   },
   scannerBackBtn: {
