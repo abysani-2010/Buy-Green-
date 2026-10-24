@@ -1,0 +1,27 @@
+{
+  "name": "buy-green",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "expo start",
+    "android": "expo start --android",
+    "ios": "expo start --ios",
+    "web": "expo start --web"
+  },
+  "dependencies": {
+    "@expo-google-fonts/gaegu": "^0.4.1",
+    "@expo/vector-icons": "^14.1.0",
+    "@react-native-async-storage/async-storage": "^3.1.1",
+    "expo": "~58.0.19",
+    "expo-camera": "~58.0.12",
+    "expo-dev-client": "~58.0.15",
+    "expo-font": "~58.0.10",
+    "expo-status-bar": "~2.0.0",
+    "react": "19.3.1",
+    "react-native": "0.88.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.25.0"
+  },
+  "private": true
+}
