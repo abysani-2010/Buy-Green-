@@ -10,20 +10,21 @@ import {
   Modal,
   SafeAreaView,
   Dimensions,
+  Alert,
 } from 'react-native';
 import { CameraView, Camera } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import productsData from './products.json';
 
-const { width } = Dimensions.get('window');
+const { width, height } = Dimensions.get('window');
 
-// Eco Score grades mapped strictly to your exact palette
+// Eco Score grades mapped strictly to your exact 4-color palette
 const ECO_COLORS = {
-  a: '#94B379', // Green
-  b: '#94B379', // Green
-  c: '#DEAA50', // Yellow
-  d: '#DEAA50', // Yellow
-  e: '#983A20', // Brown
+  a: '#94B379',
+  b: '#94B379',
+  c: '#DEAA50',
+  d: '#DEAA50',
+  e: '#983A20',
 };
 
 export default function App() {
@@ -33,8 +34,8 @@ export default function App() {
   const [displayedProducts, setDisplayedProducts] = useState([]);
   
   // Sorting & Weighting State
-  const [sortBy, setSortBy] = useState('green_value'); // 'green_value', 'ecoscore', 'affordability'
-  const [ecoWeight, setEcoWeight] = useState(0.5); // Slider ratio 0.0 to 1.0
+  const [sortBy, setSortBy] = useState('green_value'); // 'green_value', 'ecoscore', 'affordability', 'alphabetical'
+  const [ecoWeight, setEcoWeight] = useState(0.5);
 
   // Forum state
   const [posts, setPosts] = useState([
@@ -47,6 +48,7 @@ export default function App() {
 
   // Camera permissions
   const [hasPermission, setHasPermission] = useState(null);
+  const [scanned, setScanned] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -55,14 +57,11 @@ export default function App() {
     })();
   }, []);
 
-  // Recalculate top 5 products whenever category, sort metric, or weight slider changes
+  // Recalculate and sort all products whenever category, sort metric, or weight slider changes
   useEffect(() => {
     if (selectedCategory && productsData[selectedCategory]) {
-      const sorted = getTopProducts(selectedCategory, sortBy, ecoWeight);
+      const sorted = getSortedProducts(selectedCategory, sortBy, ecoWeight);
       setDisplayedProducts(sorted);
-      if (sorted.length > 0 && !activeProduct) {
-        setActiveProduct(sorted[0]);
-      }
     }
   }, [selectedCategory, sortBy, ecoWeight]);
 
@@ -74,43 +73,76 @@ export default function App() {
     return { eco, aff, greenValue };
   };
 
-  const getTopProducts = (categoryKey, metric, weight) => {
+  const getSortedProducts = (categoryKey, metric, weight) => {
     const items = productsData[categoryKey] || [];
     const scoredItems = items.map(p => {
       const { eco, aff, greenValue } = calculateScores(p, weight);
       return { ...p, _eco: eco, _aff: aff, _gv: greenValue };
     });
 
-    scoredItems.sort((a, b) => {
+    return scoredItems.sort((a, b) => {
       if (metric === 'ecoscore') return b._eco - a._eco;
       if (metric === 'affordability') return b._aff - a._aff;
-      return b._gv - a._gv;
+      if (metric === 'alphabetical') {
+        const nameA = (a.product_name || '').toLowerCase();
+        const nameB = (b.product_name || '').toLowerCase();
+        return nameA.localeCompare(nameB);
+      }
+      return b._gv - a._gv; // Default: green_value
+    });
+  };
+
+  // Filters top better products ONLY when viewing a specific product
+  const getBetterProducts = () => {
+    if (!activeProduct || !selectedCategory) return [];
+    
+    const allSorted = getSortedProducts(selectedCategory, sortBy, ecoWeight);
+    
+    // Find products strictly higher than the currently active product based on active sort
+    const filtered = allSorted.filter(item => {
+      if (item.barcode === activeProduct.barcode) return false;
+      
+      if (sortBy === 'ecoscore') {
+        return item._eco > (activeProduct._eco ?? activeProduct.ecoscore_score ?? 0);
+      }
+      if (sortBy === 'affordability') {
+        return item._aff > (activeProduct._aff ?? activeProduct.affordability_score ?? 0);
+      }
+      if (sortBy === 'alphabetical') {
+        return (item.product_name || '').toLowerCase() < (activeProduct.product_name || '').toLowerCase();
+      }
+      return item._gv > (activeProduct._gv ?? calculateScores(activeProduct, ecoWeight).greenValue);
     });
 
-    return scoredItems.slice(0, 5);
+    return filtered.slice(0, 5); // Show max top 5 better products
   };
 
   const handleSelectCategory = (catKey) => {
     setSelectedCategory(catKey);
-    const top5 = getTopProducts(catKey, sortBy, ecoWeight);
-    setDisplayedProducts(top5);
-    setActiveProduct(top5[0] || null);
+    setActiveProduct(null); // Reset active product so full category view is shown first
+    const sorted = getSortedProducts(catKey, sortBy, ecoWeight);
+    setDisplayedProducts(sorted);
     setCurrentScreen('detail');
   };
 
   const handleBarCodeScanned = ({ data }) => {
+    if (scanned) return;
+    setScanned(true);
+
     for (const catKey of Object.keys(productsData)) {
       const found = productsData[catKey].find(p => p.barcode === data);
       if (found) {
         setSelectedCategory(catKey);
-        const top5 = getTopProducts(catKey, sortBy, ecoWeight);
-        setDisplayedProducts(top5);
         setActiveProduct(found);
         setCurrentScreen('detail');
+        setScanned(false);
         return;
       }
     }
-    alert(`Product with barcode ${data} not found in sustainable database.`);
+    
+    Alert.alert("Product Not Found", `Product with barcode ${data} not found in database.`, [
+      { text: "OK", onPress: () => setScanned(false) }
+    ]);
   };
 
   const addPost = () => {
@@ -121,7 +153,6 @@ export default function App() {
     setModalVisible(false);
   };
 
-  // Calculate Price Per Ounce helper
   const getPricePerOunce = (product) => {
     if (!product?.price || !product?.quantity_oz) return 'N/A';
     const ppo = product.price / product.quantity_oz;
@@ -135,18 +166,25 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <View style={styles.welcomeContainer}>
           <View style={styles.monkeyHeaderBox}>
-            <Image source={require('./assets/monkey.png')} style={{ width: 80, height: 80, resizeMode: 'contain' }} />
-            <View style={styles.sproutBadge}><Text style={{ fontSize: 10 }}>🌱</Text></View>
+            <Image 
+              source={require('./assets/monkey.png')} 
+              style={styles.monkeyImage} 
+              resizeMode="contain" 
+            />
+            <View style={styles.sproutBadge}><Text style={{ fontSize: 16 }}>🌱</Text></View>
           </View>
+          
           <Text style={styles.welcomeTitle}>~ buy green ~</Text>
 
-          <TouchableOpacity style={styles.primaryButton} onPress={() => setCurrentScreen('home')}>
-            <Text style={styles.buttonText}>Log in</Text>
-          </TouchableOpacity>
+          <View style={styles.welcomeButtonContainer}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => setCurrentScreen('home')}>
+              <Text style={styles.buttonText}>Log in</Text>
+            </TouchableOpacity>
 
-          <TouchableOpacity style={styles.secondaryButton} onPress={() => setCurrentScreen('home')}>
-            <Text style={styles.buttonText}>Guest</Text>
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.secondaryButton} onPress={() => setCurrentScreen('home')}>
+              <Text style={styles.buttonText}>Guest</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -157,24 +195,24 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <View style={styles.headerBar}>
           <View style={styles.searchBarMock}>
-            <Ionicons name="search" size={16} color="#983A20" style={{ marginRight: 6 }} />
-            <Text style={{ color: '#983A20' }}>Choose the product category</Text>
+            <Ionicons name="search" size={18} color="#983A20" style={{ marginRight: 8 }} />
+            <Text style={{ color: '#983A20', fontWeight: '500' }}>Choose the product category</Text>
           </View>
         </View>
 
         <ScrollView contentContainerStyle={styles.categoryGrid}>
           <TouchableOpacity style={styles.catCardBread} onPress={() => handleSelectCategory('multigrain_sliced_breads')}>
-            <Image source={require('./assets/bread.png')} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+            <Image source={require('./assets/bread.png')} style={styles.catImage} resizeMode="contain" />
             <View style={styles.catLabel}><Text style={styles.catLabelText}>Bread</Text></View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.catCardJam} onPress={() => handleSelectCategory('fruit_jam')}>
-            <Image source={require('./assets/jam.png')} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+            <Image source={require('./assets/jam.png')} style={styles.catImage} resizeMode="contain" />
             <View style={styles.catLabel}><Text style={styles.catLabelText}>Jam</Text></View>
           </TouchableOpacity>
 
           <TouchableOpacity style={styles.catCardPb} onPress={() => handleSelectCategory('peanut_butter')}>
-            <Image source={require('./assets/peanut_butter.png')} style={{ width: 60, height: 60, resizeMode: 'contain' }} />
+            <Image source={require('./assets/peanut_butter.png')} style={styles.catImage} resizeMode="contain" />
             <View style={styles.catLabel}><Text style={styles.catLabelText}>Peanut butter</Text></View>
           </TouchableOpacity>
 
@@ -184,11 +222,11 @@ export default function App() {
         </ScrollView>
 
         <View style={styles.bottomNav}>
-          <TouchableOpacity onPress={() => setCurrentScreen('forum')}>
-            <Ionicons name="chatbubbles-outline" size={26} color="#983A20" />
+          <TouchableOpacity onPress={() => setCurrentScreen('forum')} style={styles.navTouchArea}>
+            <Ionicons name="chatbubbles-outline" size={28} color="#983A20" />
           </TouchableOpacity>
-          <TouchableOpacity onPress={() => setCurrentScreen('scanner')}>
-            <Ionicons name="camera-outline" size={26} color="#983A20" />
+          <TouchableOpacity onPress={() => { setScanned(false); setCurrentScreen('scanner'); }} style={styles.navTouchArea}>
+            <Ionicons name="camera-outline" size={28} color="#983A20" />
           </TouchableOpacity>
         </View>
       </SafeAreaView>
@@ -198,78 +236,135 @@ export default function App() {
   if (currentScreen === 'detail') {
     const activeGrade = activeProduct?.ecoscore_grade?.toLowerCase() || 'a';
     const gradeColor = ECO_COLORS[activeGrade] || '#94B379';
+    const betterProducts = activeProduct ? getBetterProducts() : [];
 
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.topNavBack}>
-          <TouchableOpacity onPress={() => setCurrentScreen('home')}>
-            <Ionicons name="arrow-back" size={24} color="#983A20" />
+          <TouchableOpacity onPress={() => {
+            if (activeProduct) {
+              setActiveProduct(null); // Go back to full category view
+            } else {
+              setCurrentScreen('home'); // Go back home
+            }
+          }}>
+            <Ionicons name="arrow-back" size={26} color="#983A20" />
           </TouchableOpacity>
-          <Text style={styles.headerTitleText}>Category & Product Details</Text>
-          <View style={{ width: 24 }} />
+          <Text style={styles.headerTitleText}>
+            {activeProduct ? 'Product Details' : 'All Category Products'}
+          </Text>
+          <View style={{ width: 26 }} />
         </View>
 
         <ScrollView contentContainerStyle={styles.detailContainer}>
-          {/* Active Product Focused View */}
-          <View style={styles.productImageBox}>
-            {activeProduct?.image_url ? (
-              <Image source={{ uri: activeProduct.image_url }} style={styles.productImageStyle} resizeMode="contain" />
-            ) : (
-              <Text style={{ fontSize: 40 }}>📦</Text>
-            )}
-          </View>
+          {/* FOCUSED PRODUCT DETAILS VIEW (ONLY IF A PRODUCT IS SELECTED) */}
+          {activeProduct && (
+            <View style={styles.activeProductSection}>
+              <View style={styles.productImageBox}>
+                {activeProduct?.image_url ? (
+                  <Image source={{ uri: activeProduct.image_url }} style={styles.productImageStyle} resizeMode="contain" />
+                ) : (
+                  <Text style={{ fontSize: 40 }}>📦</Text>
+                )}
+              </View>
 
-          <Text style={styles.productNameText}>~ {activeProduct?.product_name || 'PRODUCT NAME'} ~</Text>
-          <Text style={styles.brandSubtitle}>Brand: {activeProduct?.brands || 'Unknown'}</Text>
+              <Text style={styles.productNameText}>~ {activeProduct?.product_name || 'PRODUCT NAME'} ~</Text>
+              <Text style={styles.brandSubtitle}>Brand: {activeProduct?.brands || 'Unknown'}</Text>
 
-          {/* Pricing & Quantity Section */}
-          <View style={styles.priceRow}>
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>Price: ${activeProduct?.price?.toFixed(2) || 'N/A'}</Text>
-            </View>
-            <View style={styles.priceBadge}>
-              <Text style={styles.priceBadgeText}>Size: {activeProduct?.quantity_oz || 'N/A'} oz</Text>
-            </View>
-            <View style={styles.priceBadgeHighlight}>
-              <Text style={styles.priceBadgeTextHighlight}>{getPricePerOunce(activeProduct)}</Text>
-            </View>
-          </View>
+              {/* Price Details */}
+              <View style={styles.priceRow}>
+                <View style={styles.priceBadge}>
+                  <Text style={styles.priceBadgeText}>Price: ${activeProduct?.price?.toFixed(2) || 'N/A'}</Text>
+                </View>
+                <View style={styles.priceBadge}>
+                  <Text style={styles.priceBadgeText}>Size: {activeProduct?.quantity_oz || 'N/A'} oz</Text>
+                </View>
+                <View style={styles.priceBadgeHighlight}>
+                  <Text style={styles.priceBadgeTextHighlight}>{getPricePerOunce(activeProduct)}</Text>
+                </View>
+              </View>
 
-          {/* Product Score Box */}
-          <View style={styles.scoreInfoBox}>
-            <View style={styles.scoreRowItem}>
-              <Text style={styles.scoreTextLabel}>Eco Score Grade: </Text>
-              <View style={[styles.gradeBadge, { backgroundColor: gradeColor }]}>
-                <Text style={styles.gradeBadgeText}>{activeGrade.toUpperCase()}</Text>
+              {/* Score Ratings */}
+              <View style={styles.scoreInfoBox}>
+                <View style={styles.scoreRowItem}>
+                  <Text style={styles.scoreTextLabel}>Eco Score Grade: </Text>
+                  <View style={[styles.gradeBadge, { backgroundColor: gradeColor }]}>
+                    <Text style={styles.gradeBadgeText}>{activeGrade.toUpperCase()}</Text>
+                  </View>
+                </View>
+                <Text style={styles.scoreTextLabel}>Eco Score: <Text style={styles.highlightGrade}>{activeProduct?.ecoscore_score || 0}/100</Text></Text>
+                <Text style={styles.scoreTextLabel}>Affordability Rating: <Text style={styles.highlightGrade}>{activeProduct?.affordability_score || 'N/A'}/100</Text></Text>
+              </View>
+
+              {/* Better Rated Products Section */}
+              <Text style={styles.compareTitle}>Higher Rated Alternatives ({sortBy.replace('_', ' ')})</Text>
+              {betterProducts.length === 0 ? (
+                <View style={styles.noBetterBox}>
+                  <Text style={styles.noBetterText}>🌟 No higher scoring products in this category for this metric!</Text>
+                </View>
+              ) : (
+                <View style={styles.productsGrid}>
+                  {betterProducts.map((prod, index) => {
+                    const itemGrade = prod.ecoscore_grade?.toLowerCase() || 'a';
+                    const itemGradeColor = ECO_COLORS[itemGrade] || '#94B379';
+
+                    return (
+                      <TouchableOpacity
+                        key={prod.barcode || index.toString()}
+                        style={styles.gridCard}
+                        onPress={() => setActiveProduct(prod)}
+                      >
+                        <View style={styles.rankBadge}>
+                          <Text style={styles.rankBadgeText}>#{index + 1}</Text>
+                        </View>
+
+                        <Image source={{ uri: prod.image_url }} style={styles.gridCardImage} resizeMode="contain" />
+                        <Text style={styles.gridProductName} numberOfLines={2}>{prod.product_name}</Text>
+                        <Text style={styles.gridBrandName} numberOfLines={1}>{prod.brands}</Text>
+
+                        <View style={styles.cardFooterRow}>
+                          <View style={[styles.miniGradeBadge, { backgroundColor: itemGradeColor }]}>
+                            <Text style={styles.miniGradeText}>{itemGrade.toUpperCase()}</Text>
+                          </View>
+                          {sortBy === 'green_value' && <Text style={styles.greenValueScore}>GV: {prod._gv}</Text>}
+                          {sortBy === 'ecoscore' && <Text style={styles.greenValueScore}>Eco: {prod._eco}</Text>}
+                          {sortBy === 'affordability' && <Text style={styles.greenValueScore}>Aff: {prod._aff}</Text>}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )}
+            </View>
+          )}
+
+          {/* WEIGHT SLIDER (ONLY VISIBLE WHEN SORTED BY GREEN VALUE) */}
+          {sortBy === 'green_value' && (
+            <View style={styles.sliderCard}>
+              <Text style={styles.sliderTitle}>Preference Balance Weight</Text>
+              <View style={styles.sliderLabelsRow}>
+                <Text style={[styles.sliderLabel, { color: '#DEAA50' }]}>💰 Affordability ({(100 - ecoWeight * 100).toFixed(0)}%)</Text>
+                <Text style={[styles.sliderLabel, { color: '#94B379' }]}>🌱 Eco Score ({(ecoWeight * 100).toFixed(0)}%)</Text>
+              </View>
+              <View 
+                style={styles.sliderTrack}
+                onStartShouldSetResponder={() => true}
+                onResponderRelease={(evt) => {
+                  const touchX = evt.nativeEvent.locationX;
+                  const newRatio = Math.max(0, Math.min(1, touchX / (width - 70)));
+                  setEcoWeight(parseFloat(newRatio.toFixed(2)));
+                }}
+              >
+                <View style={[styles.sliderFill, { width: `${ecoWeight * 100}%` }]} />
+                <View style={[styles.sliderThumb, { left: `${ecoWeight * 100}%` }]} />
               </View>
             </View>
-            <Text style={styles.scoreTextLabel}>Eco Score: <Text style={styles.highlightGrade}>{activeProduct?.ecoscore_score || 0}/100</Text></Text>
-            <Text style={styles.scoreTextLabel}>Affordability Rating: <Text style={styles.highlightGrade}>{activeProduct?.affordability_score || 'N/A'}/100</Text></Text>
-          </View>
+          )}
 
-          {/* Interactive Eco/Affordability Weight Slider */}
-          <View style={styles.sliderCard}>
-            <Text style={styles.sliderTitle}>Preference Balance Weight</Text>
-            <View style={styles.sliderLabelsRow}>
-              <Text style={[styles.sliderLabel, { color: '#DEAA50' }]}>💰 Affordability ({(100 - ecoWeight * 100).toFixed(0)}%)</Text>
-              <Text style={[styles.sliderLabel, { color: '#94B379' }]}>🌱 Eco Score ({(ecoWeight * 100).toFixed(0)}%)</Text>
-            </View>
-            <View 
-              style={styles.sliderTrack}
-              onStartShouldSetResponder={() => true}
-              onResponderRelease={(evt) => {
-                const touchX = evt.nativeEvent.locationX;
-                const newRatio = Math.max(0, Math.min(1, touchX / (width - 70)));
-                setEcoWeight(parseFloat(newRatio.toFixed(2)));
-              }}
-            >
-              <View style={[styles.sliderFill, { width: `${ecoWeight * 100}%` }]} />
-              <View style={[styles.sliderThumb, { left: `${ecoWeight * 100}%` }]} />
-            </View>
-          </View>
-
-          {/* Sort Controls */}
-          <Text style={styles.compareTitle}>Top 5 Products Sorted By:</Text>
+          {/* SORT CONTROLS */}
+          <Text style={styles.compareTitle}>
+            {activeProduct ? 'Sort Alternatives By:' : 'Sort Category Products By:'}
+          </Text>
           <View style={styles.sortToggleRow}>
             <TouchableOpacity 
               style={[styles.sortButton, sortBy === 'green_value' && styles.sortButtonActive]}
@@ -291,47 +386,48 @@ export default function App() {
             >
               <Text style={[styles.sortButtonText, sortBy === 'affordability' && styles.sortButtonTextActive]}>Affordability</Text>
             </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={[styles.sortButton, sortBy === 'alphabetical' && styles.sortButtonActive]}
+              onPress={() => setSortBy('alphabetical')}
+            >
+              <Text style={[styles.sortButtonText, sortBy === 'alphabetical' && styles.sortButtonTextActive]}>A-Z</Text>
+            </TouchableOpacity>
           </View>
 
-          {/* 2-Column Grid Layout for Top 5 Products */}
-          <View style={styles.productsGrid}>
-            {displayedProducts.map((prod, index) => {
-              const itemGrade = prod.ecoscore_grade?.toLowerCase() || 'a';
-              const itemGradeColor = ECO_COLORS[itemGrade] || '#94B379';
-              const isSelected = activeProduct?.barcode === prod.barcode;
+          {/* ALL PRODUCTS GRID VIEW (SHOWN INITIALLY WHEN NO PRODUCT IS CLICKED) */}
+          {!activeProduct && (
+            <View style={styles.productsGrid}>
+              {displayedProducts.map((prod, index) => {
+                const itemGrade = prod.ecoscore_grade?.toLowerCase() || 'a';
+                const itemGradeColor = ECO_COLORS[itemGrade] || '#94B379';
 
-              return (
-                <TouchableOpacity
-                  key={prod.barcode || index.toString()}
-                  style={[styles.gridCard, isSelected && styles.activeGridCard]}
-                  onPress={() => setActiveProduct(prod)}
-                >
-                  {/* Tiny Affordability Badge in Top Right Corner */}
-                  <View style={styles.tinyAffordabilityBadge}>
-                    <Text style={styles.tinyAffordabilityText}>💰 {prod.affordability_score || 'N/A'}</Text>
-                  </View>
+                return (
+                  <TouchableOpacity
+                    key={prod.barcode || index.toString()}
+                    style={styles.gridCard}
+                    onPress={() => setActiveProduct(prod)}
+                  >
+                    <Image source={{ uri: prod.image_url }} style={styles.gridCardImage} resizeMode="contain" />
 
-                  {/* Rank Badge */}
-                  <View style={styles.rankBadge}>
-                    <Text style={styles.rankBadgeText}>#{index + 1}</Text>
-                  </View>
+                    <Text style={styles.gridProductName} numberOfLines={2}>{prod.product_name}</Text>
+                    <Text style={styles.gridBrandName} numberOfLines={1}>{prod.brands}</Text>
 
-                  <Image source={{ uri: prod.image_url }} style={styles.gridCardImage} resizeMode="contain" />
+                    <View style={styles.cardFooterRow}>
+                      <View style={[styles.miniGradeBadge, { backgroundColor: itemGradeColor }]}>
+                        <Text style={styles.miniGradeText}>{itemGrade.toUpperCase()}</Text>
+                      </View>
 
-                  <Text style={styles.gridProductName} numberOfLines={2}>{prod.product_name}</Text>
-                  <Text style={styles.gridBrandName} numberOfLines={1}>{prod.brands}</Text>
-
-                  {/* Eco Grade Badge + Green Value Display */}
-                  <View style={styles.cardFooterRow}>
-                    <View style={[styles.miniGradeBadge, { backgroundColor: itemGradeColor }]}>
-                      <Text style={styles.miniGradeText}>{itemGrade.toUpperCase()}</Text>
+                      {/* DISPLAY ONLY ACTIVE SORT METRIC */}
+                      {sortBy === 'green_value' && <Text style={styles.greenValueScore}>GV: {prod._gv}</Text>}
+                      {sortBy === 'ecoscore' && <Text style={styles.greenValueScore}>Eco: {prod._eco}</Text>}
+                      {sortBy === 'affordability' && <Text style={styles.greenValueScore}>Aff: {prod._aff}</Text>}
                     </View>
-                    <Text style={styles.greenValueScore}>GV: {prod._gv}</Text>
-                  </View>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          )}
         </ScrollView>
       </SafeAreaView>
     );
@@ -340,13 +436,13 @@ export default function App() {
   if (currentScreen === 'forum') {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.topNavBack}>
+        <View style={styles.topNavBackForum}>
           <TouchableOpacity onPress={() => setCurrentScreen('home')}>
-            <Ionicons name="arrow-back" size={24} color="#983A20" />
+            <Ionicons name="arrow-back" size={26} color="#983A20" />
           </TouchableOpacity>
           <Text style={styles.headerTitleText}>Local Sustainable Businesses</Text>
           <TouchableOpacity onPress={() => setModalVisible(true)}>
-            <Ionicons name="add-circle" size={28} color="#94B379" />
+            <Ionicons name="add-circle" size={32} color="#94B379" />
           </TouchableOpacity>
         </View>
 
@@ -405,31 +501,39 @@ export default function App() {
     }
 
     return (
-      <View style={styles.container}>
+      <SafeAreaView style={styles.scannerContainer}>
         <CameraView
           style={StyleSheet.absoluteFillObject}
+          facing="back"
+          barcodeScannerSettings={{
+            barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e", "code128"],
+          }}
           onBarcodeScanned={handleBarCodeScanned}
         />
-        <SafeAreaView style={styles.scannerOverlay}>
+        <View style={styles.scannerOverlay}>
           <TouchableOpacity style={styles.scannerBackBtn} onPress={() => setCurrentScreen('home')}>
-            <Ionicons name="close" size={28} color="#F1EBE2" />
+            <Ionicons name="close" size={30} color="#F1EBE2" />
           </TouchableOpacity>
           <View style={styles.scanTargetBox}>
             <Text style={styles.scanInstruction}>Align product barcode within frame</Text>
           </View>
-        </SafeAreaView>
-      </View>
+        </View>
+      </SafeAreaView>
     );
   }
 
   return null;
 }
 
-// --- STYLESHEET (Strict 4-Color Palette) ---
+// --- STYLESHEET (Strict 4-Color Palette tuned for Galaxy S23) ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#F1EBE2',
+  },
+  scannerContainer: {
+    flex: 1,
+    backgroundColor: '#000',
   },
   centerText: {
     textAlign: 'center',
@@ -441,52 +545,62 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'center',
     paddingHorizontal: 20,
+    paddingBottom: 40,
   },
   monkeyHeaderBox: {
-    width: 120,
-    height: 120,
+    width: 220,
+    height: 220,
     backgroundColor: '#F1EBE2',
-    borderRadius: 60,
+    borderRadius: 110,
     alignItems: 'center',
     justify: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
     position: 'relative',
-    borderWidth: 2,
+    borderWidth: 3,
     borderColor: '#983A20',
+  },
+  monkeyImage: {
+    width: 180,
+    height: 180,
   },
   sproutBadge: {
     position: 'absolute',
-    top: 15,
-    right: 30,
+    top: 20,
+    right: 25,
   },
   welcomeTitle: {
-    fontSize: 22,
+    fontSize: 26,
     color: '#983A20',
     fontWeight: 'bold',
-    marginBottom: 40,
+    marginBottom: 50,
+  },
+  welcomeButtonContainer: {
+    width: '100%',
+    alignItems: 'center',
   },
   primaryButton: {
     backgroundColor: '#94B379',
-    width: '70%',
-    paddingVertical: 14,
-    borderRadius: 20,
+    width: '75%',
+    paddingVertical: 16,
+    borderRadius: 24,
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   secondaryButton: {
     backgroundColor: '#DEAA50',
-    width: '70%',
-    paddingVertical: 14,
-    borderRadius: 20,
+    width: '75%',
+    paddingVertical: 16,
+    borderRadius: 24,
     alignItems: 'center',
   },
   buttonText: {
     color: '#F1EBE2',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
   },
   headerBar: {
-    padding: 16,
+    paddingTop: 12,
+    paddingBottom: 16,
     alignItems: 'center',
   },
   searchBarMock: {
@@ -496,7 +610,7 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     borderRadius: 20,
     width: '90%',
-    paddingVertical: 10,
+    paddingVertical: 12,
     paddingHorizontal: 16,
     alignItems: 'center',
   },
@@ -508,7 +622,7 @@ const styles = StyleSheet.create({
   },
   catCardBread: {
     width: '44%',
-    height: 140,
+    height: 150,
     backgroundColor: '#DEAA50',
     borderRadius: 16,
     borderWidth: 2,
@@ -519,7 +633,7 @@ const styles = StyleSheet.create({
   },
   catCardJam: {
     width: '44%',
-    height: 140,
+    height: 150,
     backgroundColor: '#94B379',
     borderRadius: 16,
     borderWidth: 2,
@@ -530,7 +644,7 @@ const styles = StyleSheet.create({
   },
   catCardPb: {
     width: '44%',
-    height: 140,
+    height: 150,
     backgroundColor: '#94B379',
     borderRadius: 16,
     borderWidth: 2,
@@ -541,7 +655,7 @@ const styles = StyleSheet.create({
   },
   catCardMore: {
     width: '44%',
-    height: 140,
+    height: 150,
     backgroundColor: '#DEAA50',
     borderRadius: 16,
     borderWidth: 2,
@@ -549,6 +663,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'center',
     marginBottom: 20,
+  },
+  catImage: {
+    width: 80,
+    height: 80,
   },
   catLabel: {
     backgroundColor: '#F1EBE2',
@@ -573,26 +691,44 @@ const styles = StyleSheet.create({
   bottomNav: {
     flexDirection: 'row',
     justify: 'space-around',
-    paddingVertical: 14,
-    borderTopWidth: 1,
+    alignItems: 'center',
+    paddingTop: 12,
+    paddingBottom: 34, // Tailored for Galaxy S23 home bar spacing
+    borderTopWidth: 2,
     borderColor: '#983A20',
     backgroundColor: '#F1EBE2',
+  },
+  navTouchArea: {
+    padding: 10,
   },
   topNavBack: {
     flexDirection: 'row',
     alignItems: 'center',
     justify: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  topNavBackForum: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justify: 'space-between',
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 8,
   },
   headerTitleText: {
     color: '#983A20',
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 17,
   },
   detailContainer: {
     alignItems: 'center',
-    padding: 20,
+    padding: 16,
+    paddingBottom: 40,
+  },
+  activeProductSection: {
+    width: '100%',
+    alignItems: 'center',
   },
   productImageBox: {
     width: 180,
@@ -686,6 +822,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     fontSize: 12,
   },
+  noBetterBox: {
+    padding: 16,
+    backgroundColor: '#F1EBE2',
+    borderWidth: 1.5,
+    borderColor: '#983A20',
+    borderRadius: 12,
+    marginBottom: 16,
+    width: '100%',
+  },
+  noBetterText: {
+    color: '#983A20',
+    fontWeight: 'bold',
+    textAlign: 'center',
+    fontSize: 13,
+  },
   sliderCard: {
     alignSelf: 'stretch',
     backgroundColor: '#F1EBE2',
@@ -754,14 +905,14 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     borderWidth: 1,
     borderRadius: 10,
-    marginHorizontal: 3,
+    marginHorizontal: 2,
     alignItems: 'center',
   },
   sortButtonActive: {
     backgroundColor: '#983A20',
   },
   sortButtonText: {
-    fontSize: 11,
+    fontSize: 10,
     color: '#983A20',
     fontWeight: 'bold',
   },
@@ -785,27 +936,6 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
   },
-  activeGridCard: {
-    borderColor: '#94B379',
-    borderWidth: 2.5,
-    backgroundColor: '#F1EBE2',
-  },
-  tinyAffordabilityBadge: {
-    position: 'absolute',
-    top: 6,
-    right: 6,
-    backgroundColor: '#F1EBE2',
-    paddingHorizontal: 4,
-    paddingVertical: 2,
-    borderRadius: 4,
-    borderWidth: 0.5,
-    borderColor: '#DEAA50',
-  },
-  tinyAffordabilityText: {
-    fontSize: 9,
-    fontWeight: 'bold',
-    color: '#983A20',
-  },
   rankBadge: {
     position: 'absolute',
     top: 6,
@@ -821,9 +951,9 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   gridCardImage: {
-    width: 70,
-    height: 70,
-    marginTop: 18,
+    width: 75,
+    height: 75,
+    marginTop: 12,
     marginBottom: 8,
   },
   gridProductName: {
@@ -861,7 +991,7 @@ const styles = StyleSheet.create({
     color: '#94B379',
   },
   forumContainer: {
-    padding: 20,
+    padding: 16,
   },
   forumCard: {
     backgroundColor: '#F1EBE2',
@@ -940,23 +1070,27 @@ const styles = StyleSheet.create({
   scannerOverlay: {
     flex: 1,
     justify: 'space-between',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 40,
+    paddingBottom: 60,
   },
   scannerBackBtn: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 8,
-    borderRadius: 20,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    padding: 10,
+    borderRadius: 25,
   },
   scanTargetBox: {
     alignSelf: 'center',
-    marginBottom: 40,
-    padding: 10,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    borderRadius: 8,
+    marginBottom: 50,
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    borderRadius: 10,
   },
   scanInstruction: {
     color: '#F1EBE2',
     fontSize: 14,
+    fontWeight: '600',
   },
 });
