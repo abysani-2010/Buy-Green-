@@ -68,12 +68,13 @@ export default function App() {
       const storedPosts = await AsyncStorage.getItem(FORUM_STORAGE_KEY);
       const parsed = storedPosts ? JSON.parse(storedPosts) : null;
       
-      if (parsed && parsed.length > 0) {
+      if (parsed && Array.isArray(parsed) && parsed.length > 0) {
         setPosts(parsed);
       } else {
         // Fallback to initial forumData.json if empty or not found
-        setPosts(initialForumPosts || []);
-        await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(initialForumPosts || []));
+        const defaults = initialForumPosts || [];
+        setPosts(defaults);
+        await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(defaults));
       }
     } catch (e) {
       console.log('Error loading saved forum posts:', e);
@@ -192,11 +193,11 @@ export default function App() {
     ]);
   };
 
-  const addPost = () => {
+  const addPost = async () => {
     if (!newBizName.trim() || !newBizText.trim()) return;
     const updated = [{ id: Date.now().toString(), name: newBizName, text: newBizText }, ...posts];
     setPosts(updated);
-    savePostsToStorage(updated);
+    await savePostsToStorage(updated);
     setNewBizName('');
     setNewBizText('');
     setModalVisible(false);
@@ -265,7 +266,7 @@ export default function App() {
           </TouchableOpacity>
 
           <View style={styles.catCardMore}>
-            <View style={styles.catLabel}>
+            <View style={styles.catLabelMore}>
               <Text style={styles.moreLabelText}>More soon!</Text>
             </View>
           </View>
@@ -752,8 +753,6 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    paddingTop: 0,
-    paddingBottom: 0,
   },
   catImage: {
     width: 115,
@@ -769,6 +768,17 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
+  },
+  catLabelMore: {
+    backgroundColor: '#F1EBE2',
+    paddingHorizontal: 14,
+    paddingVertical: 3,
+    borderRadius: 12,
+    borderWidth: 1.5,
+    borderColor: '#983A20',
+    alignItems: 'center',
+    justify: 'center',
+    marginTop: 60, // Shifted 60px down
   },
   catLabelText: {
     fontFamily: 'Gaegu_700Bold',
