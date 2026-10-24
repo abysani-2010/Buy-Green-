@@ -17,6 +17,7 @@ import {
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
+import { useFonts, Gaegu_400Regular, Gaegu_700Bold } from '@expo-google-fonts/gaegu';
 import productsData from './products.json';
 
 const { width, height } = Dimensions.get('window');
@@ -32,6 +33,11 @@ const ECO_COLORS = {
 };
 
 export default function App() {
+  const [fontsLoaded] = useFonts({
+    Gaegu_400Regular,
+    Gaegu_700Bold,
+  });
+
   const [currentScreen, setCurrentScreen] = useState('welcome');
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [activeProduct, setActiveProduct] = useState(null);
@@ -85,6 +91,10 @@ export default function App() {
       setDisplayedProducts(sorted);
     }
   }, [selectedCategory, sortBy, ecoWeight]);
+
+  if (!fontsLoaded) {
+    return null;
+  }
 
   const calculateScores = (item, weight) => {
     const eco = item.ecoscore_score || 0;
@@ -229,7 +239,7 @@ export default function App() {
         <View style={styles.headerBar}>
           <View style={styles.searchBarMock}>
             <Ionicons name="search" size={20} color="#983A20" style={{ marginRight: 8 }} />
-            <Text style={{ color: '#983A20', fontWeight: '500', fontSize: 15 }}>Choose the product category</Text>
+            <Text style={styles.searchBarText}>Choose the product category</Text>
           </View>
         </View>
 
@@ -301,7 +311,7 @@ export default function App() {
                 {activeProduct?.image_url ? (
                   <Image source={{ uri: activeProduct.image_url }} style={styles.productImageStyle} resizeMode="contain" />
                 ) : (
-                  <Text style={{ fontSize: 40 }}>📦</Text>
+                  <Text style={{ fontSize: 40, fontFamily: 'Gaegu_400Regular' }}>📦</Text>
                 )}
               </View>
 
@@ -511,10 +521,10 @@ export default function App() {
               />
               <View style={styles.modalButtons}>
                 <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setModalVisible(false)}>
-                  <Text style={{ color: '#983A20', fontWeight: 'bold' }}>Cancel</Text>
+                  <Text style={styles.modalBtnCancelText}>Cancel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.saveModalBtn} onPress={addPost}>
-                  <Text style={{ color: '#F1EBE2', fontWeight: 'bold' }}>Post</Text>
+                  <Text style={styles.modalBtnPostText}>Post</Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -602,10 +612,11 @@ const styles = StyleSheet.create({
     bottom: 0,
   },
   centerText: {
+    fontFamily: 'Gaegu_400Regular',
     textAlign: 'center',
     marginTop: 60,
     color: '#983A20',
-    fontSize: 16,
+    fontSize: 20,
   },
   welcomeContainer: {
     flex: 1,
@@ -624,7 +635,7 @@ const styles = StyleSheet.create({
     justify: 'center',
     marginBottom: 24,
     marginTop: 40,
-    paddingTop: 35, // Shifted monkey down further inside circle logo
+    paddingTop: 35,
     borderWidth: 3,
     borderColor: '#983A20',
   },
@@ -633,9 +644,9 @@ const styles = StyleSheet.create({
     height: 180,
   },
   welcomeTitle: {
-    fontSize: 28,
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 34,
     color: '#983A20',
-    fontWeight: 'bold',
     marginBottom: 40,
   },
   welcomeButtonContainer: {
@@ -645,7 +656,7 @@ const styles = StyleSheet.create({
   primaryButton: {
     backgroundColor: '#94B379',
     width: '75%',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 24,
     alignItems: 'center',
     marginBottom: 16,
@@ -653,14 +664,14 @@ const styles = StyleSheet.create({
   secondaryButton: {
     backgroundColor: '#DEAA50',
     width: '75%',
-    paddingVertical: 16,
+    paddingVertical: 14,
     borderRadius: 24,
     alignItems: 'center',
   },
   buttonText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontWeight: 'bold',
-    fontSize: 18,
+    fontSize: 22,
   },
   headerBar: {
     paddingTop: 24,
@@ -674,9 +685,14 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     borderRadius: 20,
     width: '90%',
-    paddingVertical: 12,
+    paddingVertical: 10,
     paddingHorizontal: 16,
     alignItems: 'center',
+  },
+  searchBarText: {
+    fontFamily: 'Gaegu_400Regular',
+    color: '#983A20',
+    fontSize: 18,
   },
   categoryGrid: {
     flexDirection: 'row',
@@ -736,7 +752,7 @@ const styles = StyleSheet.create({
   catLabel: {
     backgroundColor: '#F1EBE2',
     paddingHorizontal: 14,
-    paddingVertical: 6,
+    paddingVertical: 4,
     borderRadius: 12,
     borderWidth: 1.5,
     borderColor: '#983A20',
@@ -744,21 +760,21 @@ const styles = StyleSheet.create({
     justify: 'center',
   },
   catLabelText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 18,
   },
   moreLabelText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 18,
     textAlign: 'center',
   },
   moreText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontWeight: 'bold',
     textAlign: 'center',
-    fontSize: 16,
+    fontSize: 20,
   },
   bottomNav: {
     flexDirection: 'row',
@@ -794,9 +810,9 @@ const styles = StyleSheet.create({
     padding: 8,
   },
   headerTitleText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 17,
+    fontSize: 22,
   },
   detailContainer: {
     alignItems: 'center',
@@ -823,14 +839,15 @@ const styles = StyleSheet.create({
     height: '85%',
   },
   productNameText: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 22,
     color: '#983A20',
     textAlign: 'center',
     marginBottom: 2,
   },
   brandSubtitle: {
-    fontSize: 13,
+    fontFamily: 'Gaegu_400Regular',
+    fontSize: 16,
     color: '#983A20',
     marginBottom: 10,
   },
@@ -850,9 +867,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   priceBadgeText: {
+    fontFamily: 'Gaegu_400Regular',
     color: '#983A20',
-    fontSize: 12,
-    fontWeight: '600',
+    fontSize: 16,
   },
   priceBadgeHighlight: {
     backgroundColor: '#94B379',
@@ -861,9 +878,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   priceBadgeTextHighlight: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontSize: 16,
   },
   scoreInfoBox: {
     alignSelf: 'stretch',
@@ -880,14 +897,14 @@ const styles = StyleSheet.create({
     marginVertical: 2,
   },
   scoreTextLabel: {
+    fontFamily: 'Gaegu_400Regular',
     color: '#983A20',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 18,
     marginVertical: 2,
   },
   highlightGrade: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#94B379',
-    fontWeight: 'bold',
   },
   gradeBadge: {
     paddingHorizontal: 8,
@@ -895,9 +912,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   gradeBadgeText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 16,
   },
   noBetterBox: {
     padding: 16,
@@ -909,10 +926,10 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   noBetterText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
     textAlign: 'center',
-    fontSize: 13,
+    fontSize: 16,
   },
   sliderCard: {
     alignSelf: 'stretch',
@@ -924,9 +941,9 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sliderTitle: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 13,
+    fontSize: 18,
     marginBottom: 6,
     textAlign: 'center',
   },
@@ -936,8 +953,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   sliderLabel: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 15,
   },
   sliderTrack: {
     height: 14,
@@ -963,9 +980,9 @@ const styles = StyleSheet.create({
     marginLeft: -11,
   },
   compareTitle: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 20,
     marginBottom: 8,
     alignSelf: 'flex-start',
   },
@@ -989,9 +1006,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#983A20',
   },
   sortButtonText: {
-    fontSize: 10,
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 14,
     color: '#983A20',
-    fontWeight: 'bold',
   },
   sortButtonTextActive: {
     color: '#F1EBE2',
@@ -1023,9 +1040,9 @@ const styles = StyleSheet.create({
     borderRadius: 6,
   },
   rankBadgeText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontSize: 10,
-    fontWeight: 'bold',
+    fontSize: 14,
   },
   gridCardImage: {
     width: 75,
@@ -1034,14 +1051,15 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   gridProductName: {
-    fontSize: 12,
-    fontWeight: 'bold',
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 16,
     color: '#983A20',
     textAlign: 'center',
-    height: 32,
+    height: 36,
   },
   gridBrandName: {
-    fontSize: 10,
+    fontFamily: 'Gaegu_400Regular',
+    fontSize: 14,
     color: '#983A20',
     marginBottom: 6,
   },
@@ -1058,13 +1076,13 @@ const styles = StyleSheet.create({
     borderRadius: 4,
   },
   miniGradeText: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontWeight: 'bold',
-    fontSize: 10,
+    fontSize: 14,
   },
   greenValueScore: {
-    fontSize: 11,
-    fontWeight: 'bold',
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 15,
     color: '#94B379',
   },
   forumContainer: {
@@ -1091,14 +1109,15 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   forumName: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 15,
+    fontSize: 18,
   },
   forumText: {
+    fontFamily: 'Gaegu_400Regular',
     color: '#983A20',
-    fontSize: 13,
-    lineHeight: 18,
+    fontSize: 16,
+    lineHeight: 20,
   },
   modalOverlay: {
     flex: 1,
@@ -1115,13 +1134,15 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   modalTitle: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#983A20',
-    fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 20,
     marginBottom: 14,
     textAlign: 'center',
   },
   inputBox: {
+    fontFamily: 'Gaegu_400Regular',
+    fontSize: 16,
     backgroundColor: '#F1EBE2',
     borderWidth: 1,
     borderColor: '#983A20',
@@ -1137,6 +1158,16 @@ const styles = StyleSheet.create({
   },
   cancelModalBtn: {
     padding: 10,
+  },
+  modalBtnCancelText: {
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 18,
+    color: '#983A20',
+  },
+  modalBtnPostText: {
+    fontFamily: 'Gaegu_700Bold',
+    fontSize: 18,
+    color: '#F1EBE2',
   },
   saveModalBtn: {
     backgroundColor: '#94B379',
@@ -1166,8 +1197,8 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   scanInstruction: {
+    fontFamily: 'Gaegu_700Bold',
     color: '#F1EBE2',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 18,
   },
 });
