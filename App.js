@@ -250,7 +250,9 @@ export default function App() {
           </TouchableOpacity>
 
           <View style={styles.catCardMore}>
-            <Text style={styles.moreText}>more{'\n'}soon!</Text>
+            <View style={styles.catLabel}>
+              <Text style={styles.moreLabelText}>More soon!</Text>
+            </View>
           </View>
         </ScrollView>
 
@@ -622,7 +624,7 @@ const styles = StyleSheet.create({
     justify: 'center',
     marginBottom: 24,
     marginTop: 40,
-    paddingTop: 15,
+    paddingTop: 35, // Shifted monkey down further inside circle logo
     borderWidth: 3,
     borderColor: '#983A20',
   },
@@ -680,11 +682,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justify: 'space-between',
-    paddingHorizontal: 16,
+    paddingHorizontal: 18,
     paddingVertical: 12,
   },
   catCardBread: {
-    width: '47%',
+    width: '46%',
     height: 155,
     backgroundColor: '#DEAA50',
     borderRadius: 18,
@@ -695,7 +697,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   catCardJam: {
-    width: '47%',
+    width: '46%',
     height: 155,
     backgroundColor: '#94B379',
     borderRadius: 18,
@@ -706,7 +708,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   catCardPb: {
-    width: '47%',
+    width: '46%',
     height: 155,
     backgroundColor: '#94B379',
     borderRadius: 18,
@@ -717,7 +719,7 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   catCardMore: {
-    width: '47%',
+    width: '46%',
     height: 155,
     backgroundColor: '#DEAA50',
     borderRadius: 18,
@@ -733,17 +735,24 @@ const styles = StyleSheet.create({
   },
   catLabel: {
     backgroundColor: '#F1EBE2',
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 10,
-    marginTop: 8,
-    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 12,
+    borderWidth: 1.5,
     borderColor: '#983A20',
+    alignItems: 'center',
+    justify: 'center',
   },
   catLabelText: {
     color: '#983A20',
     fontWeight: 'bold',
-    fontSize: 12,
+    fontSize: 13,
+  },
+  moreLabelText: {
+    color: '#983A20',
+    fontWeight: 'bold',
+    fontSize: 14,
+    textAlign: 'center',
   },
   moreText: {
     color: '#F1EBE2',
