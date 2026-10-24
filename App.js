@@ -752,6 +752,8 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
+    paddingTop: 0,
+    paddingBottom: 0,
   },
   catImage: {
     width: 115,
