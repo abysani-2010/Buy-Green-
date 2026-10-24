@@ -144,8 +144,25 @@ export default function App() {
     if (scanned) return;
     setScanned(true);
 
+    const scannedClean = data.trim();
+
     for (const catKey of Object.keys(productsData)) {
-      const found = productsData[catKey].find(p => p.barcode === data);
+      const found = productsData[catKey].find(p => {
+        if (!p.barcode) return false;
+        const itemBarcode = p.barcode.toString().trim();
+
+        // 1. Direct match
+        if (itemBarcode === scannedClean) return true;
+
+        // 2. Contains match (handles extra leading 0s or EAN13 vs UPCA length differences)
+        if (scannedClean.includes(itemBarcode) || itemBarcode.includes(scannedClean)) return true;
+
+        // 3. Match ignoring all leading zeros
+        if (scannedClean.replace(/^0+/, '') === itemBarcode.replace(/^0+/, '')) return true;
+
+        return false;
+      });
+
       if (found) {
         setSelectedCategory(catKey);
         setActiveProduct(found);
