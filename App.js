@@ -24,7 +24,6 @@ import initialForumPosts from './forumData.json';
 const { width, height } = Dimensions.get('window');
 const FORUM_STORAGE_KEY = '@forum_posts_key_v1';
 
-// Extended grade color palette strictly within your warm earthy aesthetic
 const ECO_COLORS = {
   a: '#6B8E4E',
   b: '#94B379',
@@ -54,7 +53,7 @@ export default function App() {
   const [newBizName, setNewBizName] = useState('');
   const [newBizText, setNewBizText] = useState('');
 
-  // Expo SDK 58 Camera Permission Hook & scanning throttle
+  // Expo SDK 58 Camera Permission Hook
   const [permission, requestPermission] = useCameraPermissions();
   const [scanned, setScanned] = useState(false);
 
@@ -778,7 +777,7 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
     alignItems: 'center',
     justify: 'center',
-    marginTop: 60, // Shifted 60px down
+    marginTop: 60,
   },
   catLabelText: {
     fontFamily: 'Gaegu_700Bold',
