@@ -14,19 +14,21 @@ import {
   StatusBar,
   Platform,
 } from 'react-native';
-import { CameraView, Camera } from 'expo-camera';
+import { Camera } from 'expo-camera';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Ionicons } from '@expo/vector-icons';
 import productsData from './products.json';
 
 const { width, height } = Dimensions.get('window');
+const FORUM_STORAGE_KEY = '@forum_posts_key';
 
-// Extended grade color palette staying strictly within your warm earthy aesthetic
+// Extended grade color palette strictly within your warm earthy aesthetic
 const ECO_COLORS = {
-  a: '#6B8E4E', // Rich Forest Sage Green
-  b: '#94B379', // Main Earthy Green
-  c: '#DEAA50', // Main Mustard Yellow
-  d: '#B87233', // Warm Terracotta / Dark Amber
-  e: '#983A20', // Main Deep Brown
+  a: '#6B8E4E',
+  b: '#94B379',
+  c: '#DEAA50',
+  d: '#B87233',
+  e: '#983A20',
 };
 
 export default function App() {
@@ -39,7 +41,7 @@ export default function App() {
   const [sortBy, setSortBy] = useState('green_value'); // 'green_value', 'ecoscore', 'affordability', 'alphabetical'
   const [ecoWeight, setEcoWeight] = useState(0.5);
 
-  // Forum state
+  // Forum state with persistent storage
   const [posts, setPosts] = useState([
     { id: '1', name: 'EcoCafe Downtown', text: 'Reusing coffee grounds for community gardens and offering 10% off if you bring your own mug!' },
     { id: '2', name: 'GreenLeaf Market', text: 'Zero-waste grocery store with bulk organic grains and local produce refill stations.' }
@@ -48,16 +50,38 @@ export default function App() {
   const [newBizName, setNewBizName] = useState('');
   const [newBizText, setNewBizText] = useState('');
 
-  // Camera permissions and scanning throttle
+  // Camera permissions and scanning state
   const [hasPermission, setHasPermission] = useState(null);
   const [scanned, setScanned] = useState(false);
 
+  // Request camera permission and load saved forum posts on startup
   useEffect(() => {
     (async () => {
       const { status } = await Camera.requestCameraPermissionsAsync();
       setHasPermission(status === 'granted');
+      loadSavedPosts();
     })();
   }, []);
+
+  // Async Storage functions to persist forum posts locally
+  const loadSavedPosts = async () => {
+    try {
+      const storedPosts = await AsyncStorage.getItem(FORUM_STORAGE_KEY);
+      if (storedPosts !== null) {
+        setPosts(JSON.parse(storedPosts));
+      }
+    } catch (e) {
+      console.log('Error loading saved forum posts:', e);
+    }
+  };
+
+  const savePostsToStorage = async (newPosts) => {
+    try {
+      await AsyncStorage.setItem(FORUM_STORAGE_KEY, JSON.stringify(newPosts));
+    } catch (e) {
+      console.log('Error saving forum posts:', e);
+    }
+  };
 
   // Recalculate and sort all products whenever category, sort metric, or weight slider changes
   useEffect(() => {
@@ -67,7 +91,6 @@ export default function App() {
     }
   }, [selectedCategory, sortBy, ecoWeight]);
 
-  // Helper calculation for scores
   const calculateScores = (item, weight) => {
     const eco = item.ecoscore_score || 0;
     const aff = item.affordability_score || 50;
@@ -90,17 +113,15 @@ export default function App() {
         const nameB = (b.product_name || '').toLowerCase();
         return nameA.localeCompare(nameB);
       }
-      return b._gv - a._gv; // Default: green_value
+      return b._gv - a._gv;
     });
   };
 
-  // Filters top better products ONLY when viewing a specific product
   const getBetterProducts = () => {
     if (!activeProduct || !selectedCategory) return [];
     
     const allSorted = getSortedProducts(selectedCategory, sortBy, ecoWeight);
     
-    // Find products strictly higher than the currently active product based on active sort
     const filtered = allSorted.filter(item => {
       if (item.barcode === activeProduct.barcode) return false;
       
@@ -113,12 +134,12 @@ export default function App() {
       return item._gv > (activeProduct._gv ?? calculateScores(activeProduct, ecoWeight).greenValue);
     });
 
-    return filtered.slice(0, 5); // Show max top 5 better products
+    return filtered.slice(0, 5);
   };
 
   const handleSelectCategory = (catKey) => {
     setSelectedCategory(catKey);
-    setActiveProduct(null); // Reset active product so full category view is shown first
+    setActiveProduct(null);
     const sorted = getSortedProducts(catKey, sortBy, ecoWeight);
     setDisplayedProducts(sorted);
     setCurrentScreen('detail');
@@ -146,7 +167,9 @@ export default function App() {
 
   const addPost = () => {
     if (!newBizName.trim() || !newBizText.trim()) return;
-    setPosts([{ id: Date.now().toString(), name: newBizName, text: newBizText }, ...posts]);
+    const updated = [{ id: Date.now().toString(), name: newBizName, text: newBizText }, ...posts];
+    setPosts(updated);
+    savePostsToStorage(updated);
     setNewBizName('');
     setNewBizText('');
     setModalVisible(false);
@@ -244,9 +267,9 @@ export default function App() {
             style={styles.backButtonTouch} 
             onPress={() => {
               if (activeProduct) {
-                setActiveProduct(null); // Go back to full category view
+                setActiveProduct(null);
               } else {
-                setCurrentScreen('home'); // Go back home
+                setCurrentScreen('home');
               }
             }}
           >
@@ -259,7 +282,6 @@ export default function App() {
         </View>
 
         <ScrollView contentContainerStyle={styles.detailContainer}>
-          {/* FOCUSED PRODUCT DETAILS VIEW (ONLY IF A PRODUCT IS SELECTED) */}
           {activeProduct && (
             <View style={styles.activeProductSection}>
               <View style={styles.productImageBox}>
@@ -273,7 +295,6 @@ export default function App() {
               <Text style={styles.productNameText}>~ {activeProduct?.product_name || 'PRODUCT NAME'} ~</Text>
               <Text style={styles.brandSubtitle}>Brand: {activeProduct?.brands || 'Unknown'}</Text>
 
-              {/* Price Details */}
               <View style={styles.priceRow}>
                 <View style={styles.priceBadge}>
                   <Text style={styles.priceBadgeText}>Price: ${activeProduct?.price?.toFixed(2) || 'N/A'}</Text>
@@ -286,7 +307,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* Score Ratings */}
               <View style={styles.scoreInfoBox}>
                 <View style={styles.scoreRowItem}>
                   <Text style={styles.scoreTextLabel}>Eco Score Grade: </Text>
@@ -298,7 +318,6 @@ export default function App() {
                 <Text style={styles.scoreTextLabel}>Affordability Rating: <Text style={styles.highlightGrade}>{activeProduct?.affordability_score || 'N/A'}/100</Text></Text>
               </View>
 
-              {/* Better Rated Products Section */}
               <Text style={styles.compareTitle}>Higher Rated Alternatives ({sortBy.replace('_', ' ')})</Text>
               {betterProducts.length === 0 ? (
                 <View style={styles.noBetterBox}>
@@ -340,7 +359,6 @@ export default function App() {
             </View>
           )}
 
-          {/* WEIGHT SLIDER (ONLY VISIBLE WHEN SORTED BY GREEN VALUE) */}
           {sortBy === 'green_value' && (
             <View style={styles.sliderCard}>
               <Text style={styles.sliderTitle}>Preference Balance Weight</Text>
@@ -363,7 +381,6 @@ export default function App() {
             </View>
           )}
 
-          {/* SORT CONTROLS */}
           <Text style={styles.compareTitle}>
             {activeProduct ? 'Sort Alternatives By:' : 'Sort Category Products By:'}
           </Text>
@@ -389,7 +406,6 @@ export default function App() {
               <Text style={[styles.sortButtonText, sortBy === 'affordability' && styles.sortButtonTextActive]}>Affordability</Text>
             </TouchableOpacity>
 
-            {/* HIDE ALPHABETICAL SORT BUTTON WHEN INSIDE A SINGLE PRODUCT VIEW */}
             {!activeProduct && (
               <TouchableOpacity 
                 style={[styles.sortButton, sortBy === 'alphabetical' && styles.sortButtonActive]}
@@ -400,7 +416,6 @@ export default function App() {
             )}
           </View>
 
-          {/* ALL PRODUCTS GRID VIEW (SHOWN INITIALLY WHEN NO PRODUCT IS CLICKED) */}
           {!activeProduct && (
             <View style={styles.productsGrid}>
               {displayedProducts.map((prod, index) => {
@@ -423,7 +438,6 @@ export default function App() {
                         <Text style={styles.miniGradeText}>{itemGrade.toUpperCase()}</Text>
                       </View>
 
-                      {/* DISPLAY ONLY ACTIVE SORT METRIC */}
                       {sortBy === 'green_value' && <Text style={styles.greenValueScore}>GV: {prod._gv}</Text>}
                       {sortBy === 'ecoscore' && <Text style={styles.greenValueScore}>Eco: {prod._eco}</Text>}
                       {sortBy === 'affordability' && <Text style={styles.greenValueScore}>Aff: {prod._aff}</Text>}
@@ -499,21 +513,45 @@ export default function App() {
 
   if (currentScreen === 'scanner') {
     if (hasPermission === null) {
-      return <View style={styles.container}><Text style={styles.centerText}>Requesting camera permission...</Text></View>;
+      return (
+        <View style={styles.container}>
+          <Text style={styles.centerText}>Requesting camera permission...</Text>
+        </View>
+      );
     }
     if (hasPermission === false) {
-      return <View style={styles.container}><Text style={styles.centerText}>No access to camera</Text></View>;
+      return (
+        <View style={styles.container}>
+          <Text style={styles.centerText}>No camera access granted</Text>
+          <TouchableOpacity 
+            style={[styles.primaryButton, { alignSelf: 'center', marginTop: 20 }]}
+            onPress={async () => {
+              const { status } = await Camera.requestCameraPermissionsAsync();
+              setHasPermission(status === 'granted');
+            }}
+          >
+            <Text style={styles.buttonText}>Grant Permission</Text>
+          </TouchableOpacity>
+        </View>
+      );
     }
 
     return (
       <View style={styles.scannerContainer}>
-        <CameraView
+        <Camera
           style={StyleSheet.absoluteFillObject}
-          facing="back"
-          barcodeScannerSettings={{
-            barcodeTypes: ["qr", "ean13", "ean8", "upc_a", "upc_e", "code128"],
+          type={Camera.Constants.Type.back}
+          onBarCodeScanned={scanned ? undefined : handleBarCodeScanned}
+          barCodeScannerSettings={{
+            barCodeTypes: [
+              Camera.Constants.BarCodeType.qr,
+              Camera.Constants.BarCodeType.ean13,
+              Camera.Constants.BarCodeType.ean8,
+              Camera.Constants.BarCodeType.upc_a,
+              Camera.Constants.BarCodeType.upc_e,
+              Camera.Constants.BarCodeType.code128,
+            ],
           }}
-          onBarcodeScanned={handleBarCodeScanned}
         />
         <SafeAreaView style={styles.scannerOverlay}>
           <TouchableOpacity style={styles.scannerBackBtn} onPress={() => setCurrentScreen('home')}>
@@ -530,7 +568,7 @@ export default function App() {
   return null;
 }
 
-// --- STYLESHEET (Strict 4-Color Palette tuned for Galaxy S23) ---
+// --- STYLESHEET ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -569,8 +607,8 @@ const styles = StyleSheet.create({
     borderColor: '#983A20',
   },
   monkeyImage: {
-    width: 200,
-    height: 200,
+    width: 190,
+    height: 190,
   },
   sproutBadge: {
     position: 'absolute',
@@ -627,7 +665,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justify: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   catCardBread: {
@@ -704,7 +742,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 60,
     paddingTop: 12,
-    paddingBottom: 48, // Lifted up to clear system navigation bar
+    paddingBottom: 48,
     borderTopWidth: 2,
     borderColor: '#983A20',
     backgroundColor: '#F1EBE2',
@@ -717,7 +755,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justify: 'space-between',
     paddingHorizontal: 16,
-    paddingTop: 36, // Lowered back button position clear of status icons
+    paddingTop: 36,
     paddingBottom: 12,
   },
   topNavBackForum: {
@@ -1086,7 +1124,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justify: 'space-between',
     paddingHorizontal: 20,
-    paddingTop: 50, // Clears top status bar / camera notch
+    paddingTop: 50,
     paddingBottom: 60,
   },
   scannerBackBtn: {
